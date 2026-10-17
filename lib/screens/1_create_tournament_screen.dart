@@ -47,6 +47,47 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
     }
   }
 
+  // อัลกอริทึมจัดตารางแข่งสลับรอบ (Circle Method Round Robin) ไม่ให้ทีมแข่งติดกัน
+  List<RovMatch> _generateRoundRobinMatches(List<RovTeam> teams, int boFormat) {
+    List<RovMatch> scheduledMatches = [];
+    List<RovTeam?> teamList = List.from(teams);
+
+    // ถ้าจำนวนทีมเป็นเลขคี่ ให้ใส่ทีมหลอก (BYE) เพื่อช่วยหมุนรอบ
+    if (teamList.length % 2 != 0) {
+      teamList.add(null);
+    }
+
+    int numTeams = teamList.length;
+    int numRounds = numTeams - 1;
+    int halfSize = numTeams ~/ 2;
+
+    List<RovTeam?> tempTeams = List.from(teamList);
+
+    for (int round = 0; round < numRounds; round++) {
+      for (int i = 0; i < halfSize; i++) {
+        RovTeam? teamA = tempTeams[i];
+        RovTeam? teamB = tempTeams[numTeams - 1 - i];
+
+        // ข้ามคู่ที่มีทีม BYE
+        if (teamA != null && teamB != null) {
+          scheduledMatches.add(
+            RovMatch(
+              teamA: teamA,
+              teamB: teamB,
+              boFormat: boFormat,
+            ),
+          );
+        }
+      }
+
+      // หมุนลำดับทีมตามเข็มนาฬิกา (ล็อกตำแหน่งแรกไว้)
+      RovTeam? last = tempTeams.removeLast();
+      tempTeams.insert(1, last);
+    }
+
+    return scheduledMatches;
+  }
+
   void _generateTournament() {
     if (localTeams.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -55,23 +96,13 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
       return;
     }
 
-    List<RovMatch> matches = [];
-    for (int i = 0; i < localTeams.length; i++) {
-      for (int j = i + 1; j < localTeams.length; j++) {
-        matches.add(
-          RovMatch(
-            teamA: localTeams[i],
-            teamB: localTeams[j],
-            boFormat: selectedBo,
-          ),
-        );
-      }
-    }
+    // เรียกใช้อัลกอริทึมจัดรอบแข่งใหม่
+    List<RovMatch> matches = _generateRoundRobinMatches(localTeams, selectedBo);
 
     widget.onCreated(_nameController.text.trim(), localTeams, matches);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('สร้างทัวร์นาเมนต์เรียบร้อย! ทั้งหมด ${matches.length} แมตช์')),
+      SnackBar(content: Text('สร้างตารางการแข่งขันเรียบร้อย! ทั้งหมด ${matches.length} แมตช์')),
     );
   }
 
@@ -89,16 +120,18 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
               decoration: const InputDecoration(
                 labelText: 'ชื่อการแข่งขัน (Tournament Name)',
                 border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.emoji_events, color: Color(0xFFFFD700)),
+                prefixIcon: Icon(Icons.emoji_events, color: Color(0xFFE5B842)),
               ),
             ),
             const SizedBox(height: 16),
             const Text('รูปแบบการแข่ง:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
                   child: RadioListTile<int>(
-                    title: const Text('Best of 3 (Bo3)'),
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Bo3', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                     value: 3,
                     groupValue: selectedBo,
                     onChanged: (val) => setState(() => selectedBo = val!),
@@ -106,8 +139,18 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
                 ),
                 Expanded(
                   child: RadioListTile<int>(
-                    title: const Text('Best of 5 (Bo5)'),
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Bo5', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                     value: 5,
+                    groupValue: selectedBo,
+                    onChanged: (val) => setState(() => selectedBo = val!),
+                  ),
+                ),
+                Expanded(
+                  child: RadioListTile<int>(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Bo7', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                    value: 7,
                     groupValue: selectedBo,
                     onChanged: (val) => setState(() => selectedBo = val!),
                   ),
@@ -135,7 +178,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.add_box, size: 36, color: Color(0xFFFFD700)),
+                  icon: const Icon(Icons.add_box, size: 36, color: Color(0xFFE5B842)),
                   onPressed: _addTeam,
                 ),
               ],
@@ -150,7 +193,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
                 return Card(
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: const Color(0xFFFFD700),
+                      backgroundColor: const Color(0xFFE5B842),
                       foregroundColor: Colors.black,
                       child: Text(team.tag),
                     ),
@@ -171,7 +214,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
               height: 50,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFD700),
+                  backgroundColor: const Color(0xFFE5B842),
                   foregroundColor: Colors.black,
                 ),
                 onPressed: _generateTournament,

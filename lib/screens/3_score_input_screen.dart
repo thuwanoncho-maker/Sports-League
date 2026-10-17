@@ -23,6 +23,9 @@ class _ScoreInputScreenState extends State<ScoreInputScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // คำนวณคะแนนสูงสุดที่ชนะได้ตามรูปแบบการแข่ง (Bo3 -> ชนะ 2, Bo5 -> ชนะ 3, Bo7 -> ชนะ 4)
+    int maxWins = selectedMatch != null ? ((selectedMatch!.boFormat + 1) ~/ 2) : 2;
+
     return Scaffold(
       appBar: AppBar(title: const Text('📝 บันทึกผลการแข่งขัน')),
       body: widget.matches.isEmpty
@@ -65,6 +68,10 @@ class _ScoreInputScreenState extends State<ScoreInputScreen> {
                               '${selectedMatch!.teamA.name} VS ${selectedMatch!.teamB.name}',
                               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFFFD700)),
                             ),
+                            Text(
+                              'รูปแบบการแข่ง: Best of ${selectedMatch!.boFormat} (ชนะ $maxWins ใน ${selectedMatch!.boFormat} เกม)',
+                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
                             const Divider(height: 24),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -75,7 +82,7 @@ class _ScoreInputScreenState extends State<ScoreInputScreen> {
                                     DropdownButton<int>(
                                       value: scoreA,
                                       items: List.generate(
-                                        (selectedMatch!.boFormat == 3 ? 3 : 4),
+                                        maxWins + 1, // สกอร์เป็นไปได้ตั้งแต่ 0 ถึง maxWins
                                         (index) => DropdownMenuItem(value: index, child: Text('$index')),
                                       ),
                                       onChanged: (val) => setState(() => scoreA = val!),
@@ -89,7 +96,7 @@ class _ScoreInputScreenState extends State<ScoreInputScreen> {
                                     DropdownButton<int>(
                                       value: scoreB,
                                       items: List.generate(
-                                        (selectedMatch!.boFormat == 3 ? 3 : 4),
+                                        maxWins + 1,
                                         (index) => DropdownMenuItem(value: index, child: Text('$index')),
                                       ),
                                       onChanged: (val) => setState(() => scoreB = val!),
